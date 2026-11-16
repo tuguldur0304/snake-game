@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>TOGLO</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>🐍 TOGLO</h1>
+    <p>Score: <b id="score">0</b> | Best: <b id="best">0</b></p>
+    <canvas id="game" width="400" height="400"></canvas>
+    <p>WASD -eer hudlu. Space -eer shineer ehle.</p>
+
+    <script>
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const scoreEl = document.getElementById("score");
+      const bestEl = document.getElementById("best");
+
+      const SIZE = 20; // cell size
+      const CELLS = canvas.width / SIZE;
+      const SNAKE_EMOJI = "🐍";
+      const FOOD_EMOJI = "🍎";
+      const SPEED = 110; // ms per move
+
+      let pos,
+        dir,
+        nextDir,
+        food,
+        score,
+        best = 0,
+        dead,
+        loop;
+
+      function start() {
+        clearInterval(loop);
+        pos = { x: 10, y: 10 }; // the snake is just one dot
+        dir = { x: 1, y: 0 };
+        nextDir = dir;
+        score = 0;
+        dead = false;
+        scoreEl.textContent = 0;
+        placeFood();
+        loop = setInterval(tick, SPEED);
+        draw();
+      }
+
+      function placeFood() {
+        do {
+          food = {
+            x: Math.floor(Math.random() * CELLS),
+            y: Math.floor(Math.random() * CELLS),
+          };
+        } while (food.x === pos.x && food.y === pos.y);
+      }
+
+      function tick() {
+        dir = nextDir;
+        pos = { x: pos.x + dir.x, y: pos.y + dir.y };
+
+        // wall collision
+        if (pos.x < 0 || pos.y < 0 || pos.x >= CELLS || pos.y >= CELLS)
+          return gameOver();
+
+        if (pos.x === food.x && pos.y === food.y) {
+          score++;
+          scoreEl.textContent = score;
+          if (score > best) {
+            best = score;
+            bestEl.textContent = best;
+          }
+          placeFood();
+        }
+
+        draw();
+      }
+
+      function gameOver() {
+        dead = true;
+        clearInterval(loop);
+        draw();
+      }
+
+      function drawEmoji(emoji, cell) {
+        ctx.font = SIZE - 2 + "px serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(
+          emoji,
+          cell.x * SIZE + SIZE / 2,
+          cell.y * SIZE + SIZE / 2 + 1,
+        );
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        drawEmoji(FOOD_EMOJI, food);
+
+        // keep the snake on screen even after hitting a wall
+        const shown = {
+          x: Math.min(Math.max(pos.x, 0), CELLS - 1),
+          y: Math.min(Math.max(pos.y, 0), CELLS - 1),
+        };
+        drawEmoji(SNAKE_EMOJI, shown);
+
+        if (dead) {
+          ctx.fillStyle = "rgba(0,0,0,0.6)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "#fff";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "alphabetic";
+          ctx.font = "28px system-ui";
+          ctx.fillText("SUGA", canvas.width / 2, canvas.height / 2 - 10);
+          ctx.font = "16px system-ui";
+          ctx.fillText(
+            "Space -ee DAR!!",
+            canvas.width / 2,
+            canvas.height / 2 + 20,
+          );
+        }
+      }
+
+      document.addEventListener("keydown", (e) => {
+        const k = e.key.toLowerCase();
+        if (k === " ") {
+          e.preventDefault();
+          start();
+          return;
+        }
+
+        let d = null;
+        if (k === "arrowup" || k === "w") d = { x: 0, y: -1 };
+        if (k === "arrowdown" || k === "s") d = { x: 0, y: 1 };
+        if (k === "arrowleft" || k === "a") d = { x: -1, y: 0 };
+        if (k === "arrowright" || k === "d") d = { x: 1, y: 0 };
+
+        if (d) {
+          e.preventDefault();
+          nextDir = d; // 1 dot can turn any direction, no self-collision
+        }
+      });
+
+      start();
+    </script>
+  </body>
+</html>
